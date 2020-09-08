@@ -49,8 +49,8 @@ function cardStand({
 
   stand = union(
     stand,
-    cube({ size: [holderWidth / 2, wallSize, wallSize] }).translate([
-      holderWidth / 8,
+    cube({ size: [holderWidth / 2 - 1, wallSize, wallSize - 0.25] }).translate([
+      holderWidth / 8 + 1 / 2,
       -wallSize,
       0,
     ])
@@ -64,7 +64,7 @@ function cardStand({
       .rotateX(tiltDegree)
       .translate([0, standHeight, 0])
   );
-  stand = stand.translate([0, -standHeight-5, 0]);
+  stand = stand.translate([0, -standHeight - 5, 0]);
 
-  return [stand, cardStand];
+  return [cardStand, stand];
 }
