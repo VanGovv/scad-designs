@@ -90,11 +90,7 @@ function markerHolder({
   // straight part of the cylinder for attaching the magnet holder
   markerHolder = union(
     markerHolder,
-    cube({ size: [holderRadius * 2, holderRadius, h] }).translate([
-      -holderRadius,
-      0,
-      0,
-    ])
+    cube({ size: [holderRadius * 2, holderRadius, h] }).translate([-holderRadius, 0, 0])
   );
 
   // remove inner cylinder
@@ -107,9 +103,7 @@ function markerHolder({
 
   // multiply according to parameter *count*
   for (let i = 0; i < count; i++) {
-    allHolders.push(
-      markerHolder.translate([i * (holderRadius - wallSize / 2) * 2, 0, 0])
-    );
+    allHolders.push(markerHolder.translate([i * (holderRadius - wallSize / 2) * 2, 0, 0]));
   }
 
   return allHolders;
