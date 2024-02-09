@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@jscad/modeling": "^2.12.0"
+  }
+}
