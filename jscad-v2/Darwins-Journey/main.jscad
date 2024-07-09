@@ -2,6 +2,22 @@ const basicBitBox = require("../basicBitBox.jscad").main;
 const basicCardHolder2 = require("../basicCardHolder2.jscad").main;
 
 const configs = {
+    setup: basicBitBox({
+        x: 216.8,
+        y: 70,
+        z: 20,
+        wallStrength: 1.2,
+        floorStrength: .96,
+        innerBevel: 0,
+        outerBevel: 1,
+        compartments: [[91.8, 30.6,30.6,36.8, 19.8]],
+        includeNorthBevel: true,
+        includeSouthBevel: true,
+        includeEastBevel: true,
+        includeWestBevel: true,
+        includeTopMagnets: false,
+        includeFloorMagnets: false,
+    }),
     player: basicBitBox({
         x: 95.5,
         y: 70,
