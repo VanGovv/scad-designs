@@ -22,19 +22,17 @@ const getParameterDefinitions = () => {
         { name: "distance", type: "float", initial: 10, caption: "Distance" },
         { name: "cornerBevel", type: "float", initial: 1, caption: "Corner bevel" },
         { name: "cutoffPercent", type: "float", initial: 50, caption: "Maximum cutoff" },
-        { name: "maxIterations", type: "float", initial: 4.5, caption: "Maximum Iterations)" },
+        { name: "maxIterations", type: "float", caption: "Maximum Iterations" },
     ];
 };
 
 const hatch = (config) => {
-    const { x, y, z, distance, strength, cornerBevel, rotation, cutoffPercent } = config;
+    const { x, y, z, distance, strength, cornerBevel, rotation, cutoffPercent, maxIterations } = config;
     const hatchBase = () => cuboid({ size: [x, y, z] });
 
     let hatch = () => rotateDeg([0, 0, 0], beveledCube({ size: [distance, distance, z], r: cornerBevel, exclude: ['t', 'b'] }));
 
     const hatches = [];
-
-    const maxIterations = 2.5;
 
     const alpha = degToRad(rotation);
 
