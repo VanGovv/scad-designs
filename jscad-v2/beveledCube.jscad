@@ -21,11 +21,17 @@ const beveledCube = ({
     x,
     y,
     z,
+    size,
     r = 0,
     exclude = [],
     include = ["tw", "tn", "ts", "te", "bw", "bn", "bs", "be", "nw", "ne", "sw", "se"],
     getBevels = false,
 } = {}) => {
+
+    if (size) {
+        [x, y, z] = size;
+    }
+
     exclude.forEach((e) => {
         include = include.filter((x) => !x.includes(e));
     });
