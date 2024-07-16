@@ -70,8 +70,9 @@ const basicCardHolder = (config) => {
         )
     );
 
-    cutouts.push(translate([0, -boxY / 2, cutoutWidth * .75 + wallStrength/2], rotateDeg([0, 0, 180], fingerCutout)));
-    cutouts.push(translate([0, boxY / 2, cutoutWidth * .75 + wallStrength/2], rotateDeg([0, 0, 0], fingerCutout)));
+    // TODO
+    cutouts.push(translate([0, -boxY / 2, cutoutWidth * .75 + wallStrength/2 + .2], rotateDeg([0, 0, 180], fingerCutout)));
+    cutouts.push(translate([0, boxY / 2, cutoutWidth * .75 + wallStrength/2 + .2], rotateDeg([0, 0, 0], fingerCutout)));
 
     return subtract(outerBox, cutouts);
 };
