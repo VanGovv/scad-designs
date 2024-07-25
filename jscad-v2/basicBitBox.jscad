@@ -2,6 +2,8 @@ const jscad = require("@jscad/modeling");
 const { union } = require("@jscad/modeling/src/operations/booleans");
 
 const beveledCube = require("./beveledCube.jscad").main;
+const {generateCompartmentCutouts} = require("./utils.jscad");
+
 
 const { cylinder } = jscad.primitives;
 const { translate } = jscad.transforms;
@@ -58,63 +60,34 @@ const basicBitBox = ({
     includeWestBevel = true,
     magnetDiameter,
     magnetHeight,
-    magnetWallStrength = .8,
+    magnetWallStrength = 0.8,
     includeTopMagnets = false,
     includeFloorMagnets = false,
 }) => {
     // parse compartment json representation
-    const compartments = typeof compartmentJson === "string" ? JSON.parse(compartmentJson) : compartmentJson;
-    const yRelatives = typeof yRelativesJson === "string" ? JSON.parse(yRelativesJson) : yRelativesJson;
+    const compartments =
+        typeof compartmentJson === "string" && compartmentJson !== "" ? JSON.parse(compartmentJson) : compartmentJson;
+    const yRelatives =
+        typeof yRelativesJson === "string" && yRelativesJson !== "" ? JSON.parse(yRelativesJson) : yRelativesJson;
 
     const outerBox = beveledCube({ x: x, y: y, z: z, r: outerBevel, exclude: ["t"] });
 
-    const cutouts = [];
-
-    // see ./compartment-algorithm.jpg for visualization of the translation algorithm
-    const sum = (accumulator, currentValue) => accumulator + currentValue;
-    const yCompCount = compartments.length;
-    const yTotalRelativeSize = yRelatives ? yRelatives.reduce(sum) : compartments.length;
-
-    let translateY = -y / 2;
-    for (let xi = 0; xi < yCompCount; xi++) {
-        const xCompCount = compartments[xi].length || compartments[xi];
-        const xTotalRelativeSize = compartments[xi].length ? compartments[xi].reduce(sum) : compartments[xi];
-
-        const yCurrentRelativeSize = yRelatives ? yRelatives[xi] : 1;
-        const ySize = (y - wallStrength * (1 + yCompCount)) * (yCurrentRelativeSize / yTotalRelativeSize);
-        translateY += ySize / 2 + wallStrength;
-
-        let translateX = -x / 2;
-        for (let yi = 0; yi < xCompCount; yi++) {
-            const xCurrentRelativeSize = compartments[xi].length ? compartments[xi][yi] : 1;
-            const xSize = (x - wallStrength * (1 + xCompCount)) * (xCurrentRelativeSize / xTotalRelativeSize);
-            translateX += xSize / 2 + wallStrength;
-
-            cutouts.push(
-                translate(
-                    [translateX, translateY, floorStrength / 2],
-                    beveledCube({
-                        x: xSize,
-                        y: ySize,
-                        z: z - floorStrength,
-                        r: innerBevel,
-                        include: [
-                            includeNorthBevel && "bn",
-                            includeSouthBevel && "bs",
-                            includeEastBevel && "be",
-                            includeWestBevel && "bw",
-                            includeNorthBevel && includeEastBevel && "ne",
-                            includeNorthBevel && includeWestBevel && "nw",
-                            includeSouthBevel && includeEastBevel && "se",
-                            includeSouthBevel && includeWestBevel && "sw",
-                        ],
-                    })
-                )
-            );
-            translateX += xSize / 2;
-        }
-        translateY += ySize / 2;
-    }
+    const cutouts = translate(
+        [0, 0, floorStrength / 2],
+        generateCompartmentCutouts({
+            x: x - 2 * wallStrength,
+            y: y - 2 * wallStrength,
+            z: z - floorStrength,
+            wallStrength,
+            compartments,
+            yRelatives,
+            innerBevel,
+            includeNorthBevel,
+            includeSouthBevel,
+            includeEastBevel,
+            includeWestBevel,
+        })
+    );
 
     const holder = subtract(outerBox, ...cutouts);
 

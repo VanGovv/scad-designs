@@ -52,27 +52,28 @@ const basicCardHolder = (config) => {
         )
     );
 
-    const fingerCutout = union(
-        cuboid({
-            size: [cutoutWidth, cutoutWidth / 2, cutoutWidth / 2],
-        }),
-        translate([cutoutWidth * 0.75, 0, 0], rotateDeg([-90, 0, 0], bevel(cutoutWidth / 2, cutoutWidth / 2))),
-        translate([-cutoutWidth * 0.75, 0, 0], rotateDeg([90, 180, 0], bevel(cutoutWidth / 2, cutoutWidth / 2))),
-        translate(
-            [0, 0, -cutoutWidth / 4],
-            rotateDeg(
-                [90, 180, 0],
-                cylinder({
-                    height: cutoutWidth / 2,
-                    radius: cutoutWidth / 2,
-                })
+    const fingerCutout = translate(
+        [0, 0, -cutoutWidth / 4],
+        union(
+            cuboid({
+                size: [cutoutWidth, cutoutWidth / 2, cutoutWidth / 2],
+            }),
+            translate([cutoutWidth * 0.75, 0, 0], rotateDeg([-90, 0, 0], bevel(cutoutWidth / 2, cutoutWidth / 2))),
+            translate([-cutoutWidth * 0.75, 0, 0], rotateDeg([90, 180, 0], bevel(cutoutWidth / 2, cutoutWidth / 2))),
+            translate(
+                [0, 0, -cutoutWidth / 4],
+                rotateDeg(
+                    [90, 180, 0],
+                    cylinder({
+                        height: cutoutWidth / 2,
+                        radius: cutoutWidth / 2,
+                    })
+                )
             )
         )
     );
 
-    // TODO
-    cutouts.push(translate([0, -boxY / 2, cutoutWidth * .75 + wallStrength/2 + .2], rotateDeg([0, 0, 180], fingerCutout)));
-    cutouts.push(translate([0, boxY / 2, cutoutWidth * .75 + wallStrength/2 + .2], rotateDeg([0, 0, 0], fingerCutout)));
+    cutouts.push(translate([0, 0, (cardWidth + floorStrength) / 2], rotateDeg([0, 0, 0], fingerCutout)));
 
     return subtract(outerBox, cutouts);
 };
