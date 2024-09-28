@@ -22,11 +22,12 @@ const getParameterDefinitions = () => {
         { name: "distance", type: "float", initial: 10, caption: "Distance" },
         { name: "cornerBevel", type: "float", initial: 1, caption: "Corner bevel" },
         { name: "cutoffPercent", type: "float", initial: 50, caption: "Maximum cutoff" },
-        { name: "maxIterations", type: "float", caption: "Maximum Iterations" },
+        { name: "maxIterations", type: "float", initial: 5, caption: "Maximum Iterations" },
     ];
 };
 
 const hatch = (config) => {
+    console.log(config)
     const { x, y, z, distance, strength, cornerBevel, rotation, cutoffPercent, maxIterations } = config;
     const hatchBase = () => cuboid({ size: [x, y, z] });
 
@@ -72,4 +73,4 @@ const hatch = (config) => {
     return subtract(hatchBase(), subtract(hatchBase(), rotateDeg([0, 0, rotation], mirrorX(hatches))));
 };
 
-module.exports = { main: hatch, getParameterDefinitions };
+module.exports = { main: hatch, getParameterDefinitions, includeHatchParameters: getParameterDefinitions().map(p => ({...p, name: "hatch_" + p.name, caption: "Hatch " + p.caption})) };

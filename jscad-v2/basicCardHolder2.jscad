@@ -4,6 +4,7 @@ const { degToRad } = require("@jscad/modeling/src/utils");
 
 const beveledCube = require("./beveledCube.jscad").beveledCube;
 const bevel = require("./beveledCube.jscad").bevel;
+const { main: hatch } = require("./hatch.jscad");
 const rotateDeg = require("./beveledCube.jscad").rotateDeg;
 
 const { cuboid, cylinder } = jscad.primitives;
@@ -18,6 +19,15 @@ const getParameterDefinitions = () => {
         { name: "cardClearance", type: "float", initial: 0.5, caption: "Card clearance" },
         { name: "wallStrength", type: "float", initial: 1.2, caption: "Wall size" },
         { name: "floorStrength", type: "float", initial: 0.96, caption: "Floor strength" },
+
+        { name: "hatchSettings", type: "group", initial: "closed", caption: "Hatch settings" },
+        { name: "includeHatch", type: "checkbox", checked: true, caption: "Include hatch" },
+        { name: "hatch_clearance", type: "float", initial: 5, caption: "Clearance" },
+        { name: "hatch_strength", type: "float", initial: 10, caption: "Bridge strength" },
+        { name: "hatch_distance", type: "float", initial: 20, caption: "Distance" },
+        { name: "hatch_cornerBevel", type: "float", initial: 1, caption: "Corner bevel" },
+        { name: "hatch_cutoffPercent", type: "float", initial: 80, caption: "Maximum cutoff" },
+        { name: "hatch_maxIterations", type: "float", initial: 5, caption: "Maximum Iterations" },
     ];
 };
 
@@ -36,6 +46,13 @@ const basicCardHolder = (config) => {
         wallStrength = 1.2,
         floorStrength = 1.2,
         cutoutWidth = cardWidth / 2,
+        includeHatch = false,
+        hatch_clearance,
+        hatch_strength,
+        hatch_distance,
+        hatch_cornerBevel,
+        hatch_cutoffPercent,
+        hatch_maxIterations,
     } = config;
     const boxX = cardHeight + cardClearance + wallStrength * 2;
     const boxY = holderDepth + cardClearance + wallStrength * 2;
@@ -72,6 +89,22 @@ const basicCardHolder = (config) => {
             )
         )
     );
+
+    if (includeHatch) {
+        cutouts.push(
+            rotateDeg([90, 0, 0], hatch({
+                x: boxX - hatch_clearance * 2,
+                z: boxY,
+                y: cardWidth - hatch_clearance * 2,
+                rotation: 45,
+                strength: hatch_strength,
+                distance: hatch_distance,
+                cornerBevel: hatch_cornerBevel,
+                cutoffPercent: hatch_cutoffPercent,
+                maxIterations: hatch_maxIterations,
+            }))
+        );
+    }
 
     cutouts.push(translate([0, 0, (cardWidth + floorStrength) / 2], rotateDeg([0, 0, 0], fingerCutout)));
 
