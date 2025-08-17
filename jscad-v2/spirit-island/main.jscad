@@ -3,8 +3,8 @@ const basicCardHolder2 = require("../basicCardHolder2.jscad").main;
 
 const spiritConfig = (part) =>
     doubleWalledBox({
-        x: 153,
-        y: 88,
+        x: 154,
+        y: 100,
         z: 230,
         innerWallStrength: 1.2,
         outerWallStrength: 1.2,
@@ -12,8 +12,8 @@ const spiritConfig = (part) =>
         coverStrength: 1.2,
         innerBevelRadius: 0,
         outerBevelRadius: 1,
-        splitHeightP: 50,
-        slideP: 30,
+        splitHeightP: 40,
+        slideP: 20,
         clearance: 0.2,
         includeWalls: false,
         part,
@@ -69,6 +69,36 @@ const szenarioMarkers = (part) =>
             hatchClearance: 2,
             hatchStrength: 3,
             hatchDistance: 12,
+            hatchCornerBevel: 2, 
+            hatchRotation: 45, 
+            hatchCutoffPercent: 60,
+            hatchMaxIterations: 2
+        }),
+        part,
+    });
+const fearMarkers = (part) =>
+    doubleWalledBox({
+        x: 56,
+        y: 93.5,
+        z: 28.4,
+        innerWallStrength: 0.8,
+        outerWallStrength: 0.8,
+        floorStrength: part === "bottom" ? 0.72 : 0.96,
+        innerBevelRadius: part === "bottom" ? 6 : 0,
+        outerBevelRadius: 0,
+        splitHeightP: 50,
+        slideP: 30,
+        clearance: 0.2,
+        includeWalls: true,
+        compartments: [1,1],
+        yRelatives: [3,2],
+        ...(part === "bottom" ? {
+            includeHatch: false,
+        } : {
+            includeHatch: true,
+            hatchClearance: 2,
+            hatchStrength: 3,
+            hatchDistance: 10,
             hatchCornerBevel: 2, 
             hatchRotation: 45, 
             hatchCutoffPercent: 60,
@@ -145,14 +175,16 @@ const natureIncarnateHazardMarkers = (part) =>
     });
 
 const configs = {
+    fearMarkersTop: fearMarkers("top"),
+    fearMarkersBottom: fearMarkers("bottom"),
     hazardMarkersTop: hazardMarkers("top"),
     hazardMarkersBottom: hazardMarkers("bottom"),
     natureIncarnateHazardMarkersBottom: natureIncarnateHazardMarkers("bottom"),
     natureIncarnateHazardMarkersTop: natureIncarnateHazardMarkers("top"),
-    syenarioCardHolder: basicCardHolder2({
+    szenarioCardHolder: basicCardHolder2({
         cardHeight: 103,
         cardWidth: 153,
-        holderDepth: 9,
+        holderDepth: 11,
         cardClearance: 0,
         wallStrength: .8,
         floorStrength: 1.2,
@@ -160,27 +192,6 @@ const configs = {
     }),
     szenarioMarkersTop: szenarioMarkers("top"),
     szenarioMarkersBottom: szenarioMarkers("bottom"),
-    hazardTest: doubleWalledBox({
-        x: 20.6,
-        y: 83,
-        z: 26.26,
-        innerWallStrength: 0.8,
-        outerWallStrength: 0,
-        floorStrength: 0.24,
-        innerBevelRadius: 20,
-        includeNorthBevel: false,
-        includeSouthBevel: false,
-        includeEastBevel: true,
-        includeWestBevel: true,
-        outerBevelRadius: 0,
-        splitHeightP: 50,
-        slideP: 30,
-        clearance: 0.2,
-        includeWalls: true,
-        compartments: [1],
-        part: "bottom",
-        includeHatch: false,
-    }),
     playerBottom: playerConfig("bottom"),
     playerTop: playerConfig("top"),
     spiritPowerCards: basicCardHolder2({

@@ -2,18 +2,18 @@ const jscad = require("@jscad/modeling");
 
 const { degToRad } = jscad.utils;
 const { translate, rotate, mirrorX } = jscad.transforms;
-const { subtract } = jscad.booleans;
-const { cuboid } = jscad.primitives;
+const { union, subtract } = jscad.booleans;
+const { cuboid, cylinder } = jscad.primitives;
 const { main: beveledCube } = require("./beveledCube.jscad");
 
-const { abs, cos, sin, sqrt, round, max } = Math;
+const { abs, cos, sin, sqrt, round, max, ceil, floor } = Math;
 const roundPrec = (number, prec) => round(number * 10 ** prec) / 10 ** prec;
 
 const rotateDeg = ([x, y, z], ...rest) => {
     return rotate([degToRad(x), degToRad(y), degToRad(z)], ...rest);
 };
 
-const hatch = (config) => {
+const squareHatch = (config) => {
     const { x, y, z, distance, strength, bevel, rotation, cutoffPercent, maxIterations } = config;
     const hatchBase = () => cuboid({ size: [x, y, z] });
 
@@ -57,6 +57,37 @@ const hatch = (config) => {
 
     return subtract(hatchBase(), subtract(hatchBase(), rotateDeg([0, 0, rotation], mirrorX(hatches))));
 };
+
+const hexHatch = (config) => {
+    const { x, y, z, hexDiameter, strength  } = config;
+
+    // * 7/6 due to the reduced size of hexagons compared to circles
+    const single = () =>  rotateDeg([0, 0, 30], cylinder({ radius: hexDiameter/2 * 7/6, height: z, segments: 6 }));
+
+    const d = strength + hexDiameter
+    const r = d/2
+    const verticalOffset = sqrt(d**2 - r ** 2)
+
+    const horizontalCount = round(x / d) -1
+    const verticalCount = round(y / verticalOffset)
+
+    const row = (n) => {
+        const res = []
+        for (let i = -n/2; i <= n/2; i++) {
+            res.push(translate([d * i, 0, 0], single()))
+        }
+        return union(...res)
+    }
+
+    const res = []
+    for (let i = 0; i <= verticalCount; i++) {
+        const foo = -verticalCount/2 + i
+        const newRow = row(horizontalCount + abs(i % 2));
+        res.push(translate([0, sqrt(d**2 - r ** 2) * foo, 0], newRow))
+    }
+
+    return res
+}
 
 const generateCompartments = ({ x, y, z, wallStrength, compartments, yRelatives, fun }) => {
     console.log(wallStrength)
@@ -154,7 +185,7 @@ const generateCompartmentHatch = ({
         compartments,
         yRelatives,
         fun: ({ compartmentX, compartmentY }) =>
-            hatch({
+            rectHatch({
                 x: compartmentX,
                 y: compartmentY,
                 z,
@@ -168,4 +199,4 @@ const generateCompartmentHatch = ({
     });
 };
 
-module.exports = { rotateDeg, generateCompartmentCutouts, generateCompartmentHatch, hatch };
+module.exports = { rotateDeg, generateCompartmentCutouts, generateCompartmentHatch, squareHatch, hexHatch };
