@@ -5,6 +5,7 @@ const { translate, rotate, mirrorX } = jscad.transforms;
 const { union, subtract } = jscad.booleans;
 const { cuboid, cylinder } = jscad.primitives;
 const { main: beveledCube } = require("./beveledCube.jscad");
+const { main: shearedCube } = require("./shearedCube.jscad");
 
 const { abs, cos, sin, sqrt, round, max, ceil, floor } = Math;
 const roundPrec = (number, prec) => round(number * 10 ** prec) / 10 ** prec;
@@ -59,38 +60,41 @@ const squareHatch = (config) => {
 };
 
 const hexHatch = (config) => {
-    const { x, y, z, hexDiameter, strength  } = config;
+    const { x, y, z, hexDiameter, strength } = config;
 
     // * 7/6 due to the reduced size of hexagons compared to circles
-    const single = () =>  rotateDeg([0, 0, 30], cylinder({ radius: hexDiameter/2 * 7/6, height: z, segments: 6 }));
+    const single = () =>
+        rotateDeg([0, 0, 30], cylinder({ radius: ((hexDiameter / 2) * 7) / 6, height: z, segments: 6 }));
 
-    const d = strength + hexDiameter
-    const r = d/2
-    const verticalOffset = sqrt(d**2 - r ** 2)
+    const d = strength + hexDiameter;
+    const r = d / 2;
+    const verticalOffset = sqrt(d ** 2 - r ** 2);
 
-    const horizontalCount = round(x / d) -1
-    const verticalCount = round(y / verticalOffset)
+    const horizontalCount = round(x / d) - 1;
+    const verticalCount = round(y / verticalOffset);
 
     const row = (n) => {
-        const res = []
-        for (let i = -n/2; i <= n/2; i++) {
-            res.push(translate([d * i, 0, 0], single()))
+        const res = [];
+        for (let i = -n / 2; i <= n / 2; i++) {
+            res.push(translate([d * i, 0, 0], single()));
         }
-        return union(...res)
-    }
+        return union(...res);
+    };
 
-    const res = []
+    const res = [];
     for (let i = 0; i <= verticalCount; i++) {
-        const foo = -verticalCount/2 + i
+        const foo = -verticalCount / 2 + i;
         const newRow = row(horizontalCount + abs(i % 2));
-        res.push(translate([0, sqrt(d**2 - r ** 2) * foo, 0], newRow))
+        res.push(translate([0, sqrt(d ** 2 - r ** 2) * foo, 0], newRow));
     }
 
-    return res
-}
+    return res;
+};
 
-const generateCompartments = ({ x, y, z, wallStrength, compartments, yRelatives, fun }) => {
-    console.log(wallStrength)
+const generateCompartments = ({ x, y, z, wallStrength, wallStrengthX, wallStrengthY, compartments, yRelatives, fun }) => {
+    wallStrengthX = wallStrengthX || wallStrength;
+    wallStrengthY = wallStrengthY || wallStrength;
+
     const cutouts = [];
 
     // see ./compartment-algorithm.jpg for visualization of the translation algorithm
@@ -99,20 +103,20 @@ const generateCompartments = ({ x, y, z, wallStrength, compartments, yRelatives,
     const sum = (accumulator, currentValue) => accumulator + currentValue;
     const yTotalRelativeSize = yRelatives ? yRelatives.reduce(sum) : compartments.length;
 
-    let translateY = -y / 2 - wallStrength;
+    let translateY = -y / 2 - wallStrengthY;
     for (let xi = 0; xi < yCompCount; xi++) {
         const xCompCount = compartments[xi].length || compartments[xi];
         const xTotalRelativeSize = compartments[xi].length ? compartments[xi].reduce(sum) : compartments[xi];
 
         const yCurrentRelativeSize = yRelatives ? yRelatives[xi] : 1;
-        const compartmentY = (y - wallStrength * (yCompCount - 1)) * (yCurrentRelativeSize / yTotalRelativeSize);
-        translateY += compartmentY / 2 + wallStrength;
+        const compartmentY = (y - wallStrengthY * (yCompCount - 1)) * (yCurrentRelativeSize / yTotalRelativeSize);
+        translateY += compartmentY / 2 + wallStrengthY;
 
-        let translateX = -x / 2 - wallStrength;
+        let translateX = -x / 2 - wallStrengthX;
         for (let yi = 0; yi < xCompCount; yi++) {
             const xCurrentRelativeSize = compartments[xi].length ? compartments[xi][yi] : 1;
-            const compartmentX = (x - wallStrength * (xCompCount - 1)) * (xCurrentRelativeSize / xTotalRelativeSize);
-            translateX += compartmentX / 2 + wallStrength;
+            const compartmentX = (x - wallStrengthX * (xCompCount - 1)) * (xCurrentRelativeSize / xTotalRelativeSize);
+            translateX += compartmentX / 2 + wallStrengthX;
 
             cutouts.push(translate([translateX, translateY, 0], fun({ compartmentX, compartmentY })));
             translateX += compartmentX / 2;
@@ -122,7 +126,66 @@ const generateCompartments = ({ x, y, z, wallStrength, compartments, yRelatives,
     return cutouts;
 };
 
-const generateCompartmentCutouts = ({
+const generateShearedCompartmentCutouts = ({
+    x,
+    y,
+    z,
+    wallStrength,
+    wallStrengthX,
+    wallStrengthY,
+    compartments,
+    yRelatives,
+    bevel,
+    includeFloorBevel,
+    includeNorthBevel,
+    includeSouthBevel,
+    includeEastBevel,
+    includeWestBevel,
+    shearHeight,
+    shearFullSizeX,
+    shearFullSizeY,
+    shearFloorSizeX,
+    shearFloorSizeY,
+    shearTopSizeX,
+    shearTopSizeY,
+}) => {
+    console.log(z, shearHeight)
+    return generateCompartments({
+        x,
+        y,
+        z,
+        wallStrength,
+        wallStrengthX,
+        wallStrengthY,
+        compartments,
+        yRelatives,
+        fun: ({ compartmentX, compartmentY }) =>
+            translate([0, 0, ((shearHeight || z) - z)/2], shearedCube({
+                x: compartmentX,
+                y: compartmentY,
+                z: shearHeight || z,
+                r: bevel,
+                include: [
+                    includeFloorBevel && includeNorthBevel && "bn",
+                    includeFloorBevel && includeSouthBevel && "bs",
+                    includeFloorBevel && includeEastBevel && "be",
+                    includeFloorBevel && includeWestBevel && "bw",
+                    includeNorthBevel && includeEastBevel && "ne",
+                    includeNorthBevel && includeWestBevel && "nw",
+                    includeSouthBevel && includeEastBevel && "se",
+                    includeSouthBevel && includeWestBevel && "sw",
+                ],
+                fullSizeX: shearFullSizeX,
+                fullSizeY: shearFullSizeY,
+                floorSizeX: shearFloorSizeX,
+                floorSizeY: shearFloorSizeY,
+                topSizeX: shearTopSizeX,
+                topSizeY: shearTopSizeY,
+           })),
+    });
+};
+
+const generateBeveledCompartmentCutouts = ({
     x,
     y,
     z,
@@ -130,12 +193,12 @@ const generateCompartmentCutouts = ({
     compartments,
     yRelatives,
     bevel,
+    includeFloorBevel,
     includeNorthBevel,
     includeSouthBevel,
     includeEastBevel,
     includeWestBevel,
 }) => {
-    console.log(wallStrength)
     return generateCompartments({
         x,
         y,
@@ -150,10 +213,10 @@ const generateCompartmentCutouts = ({
                 z,
                 r: bevel,
                 include: [
-                    includeNorthBevel && "bn",
-                    includeSouthBevel && "bs",
-                    includeEastBevel && "be",
-                    includeWestBevel && "bw",
+                    includeFloorBevel && includeNorthBevel && "bn",
+                    includeFloorBevel && includeSouthBevel && "bs",
+                    includeFloorBevel && includeEastBevel && "be",
+                    includeFloorBevel && includeWestBevel && "bw",
                     includeNorthBevel && includeEastBevel && "ne",
                     includeNorthBevel && includeWestBevel && "nw",
                     includeSouthBevel && includeEastBevel && "se",
@@ -199,4 +262,4 @@ const generateCompartmentHatch = ({
     });
 };
 
-module.exports = { rotateDeg, generateCompartmentCutouts, generateCompartmentHatch, squareHatch, hexHatch };
+module.exports = { rotateDeg, generateShearedCompartmentCutouts, generateBeveledCompartmentCutouts, generateCompartmentHatch, squareHatch, hexHatch };

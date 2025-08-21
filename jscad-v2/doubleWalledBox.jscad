@@ -6,7 +6,7 @@ const { translate } = jscad.transforms;
 const { subtract } = jscad.booleans;
 
 const beveledCube = require("./beveledCube.jscad").main;
-const { generateCompartmentCutouts, generateCompartmentHatch } = require("./utils.jscad");
+const { generateBeveledCompartmentCutouts, generateCompartmentHatch } = require("./utils.jscad");
 
 const getParameterDefinitions = () => {
     return [
@@ -140,7 +140,7 @@ const doubleWalledBox = (config) => {
     
     const innerWallCutout = translate(
         [0, 0, floorStrength],
-        generateCompartmentCutouts({
+        generateBeveledCompartmentCutouts({
             x: x - 2 * (outerWallStrength + innerWallStrength),
             y: y - 2 * (outerWallStrength + innerWallStrength),
             z,

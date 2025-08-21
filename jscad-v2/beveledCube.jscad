@@ -27,7 +27,6 @@ const beveledCube = ({
     include = ["tw", "tn", "ts", "te", "bw", "bn", "bs", "be", "nw", "ne", "sw", "se"],
     getBevels = false,
 } = {}) => {
-
     if (size) {
         [x, y, z] = size;
     }
