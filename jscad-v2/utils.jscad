@@ -2,9 +2,9 @@ const jscad = require("@jscad/modeling");
 
 const { degToRad } = jscad.utils;
 const { translate, rotate, mirrorX } = jscad.transforms;
-const { union, subtract } = jscad.booleans;
+const { union, subtract, intersect } = jscad.booleans;
 const { cuboid, cylinder } = jscad.primitives;
-const { main: beveledCube } = require("./beveledCube.jscad");
+const { main: beveledCube, bevel } = require("./beveledCube.jscad");
 const { main: shearedCube } = require("./shearedCube.jscad");
 
 const { abs, cos, sin, sqrt, round, max, ceil, floor } = Math;
@@ -91,7 +91,17 @@ const hexHatch = (config) => {
     return res;
 };
 
-const generateCompartments = ({ x, y, z, wallStrength, wallStrengthX, wallStrengthY, compartments, yRelatives, fun }) => {
+const generateCompartments = ({
+    x,
+    y,
+    z,
+    wallStrength,
+    wallStrengthX,
+    wallStrengthY,
+    compartments,
+    yRelatives,
+    fun,
+}) => {
     wallStrengthX = wallStrengthX || wallStrength;
     wallStrengthY = wallStrengthY || wallStrength;
 
@@ -149,7 +159,6 @@ const generateShearedCompartmentCutouts = ({
     shearTopSizeX,
     shearTopSizeY,
 }) => {
-    console.log(z, shearHeight)
     return generateCompartments({
         x,
         y,
@@ -160,28 +169,31 @@ const generateShearedCompartmentCutouts = ({
         compartments,
         yRelatives,
         fun: ({ compartmentX, compartmentY }) =>
-            translate([0, 0, ((shearHeight || z) - z)/2], shearedCube({
-                x: compartmentX,
-                y: compartmentY,
-                z: shearHeight || z,
-                r: bevel,
-                include: [
-                    includeFloorBevel && includeNorthBevel && "bn",
-                    includeFloorBevel && includeSouthBevel && "bs",
-                    includeFloorBevel && includeEastBevel && "be",
-                    includeFloorBevel && includeWestBevel && "bw",
-                    includeNorthBevel && includeEastBevel && "ne",
-                    includeNorthBevel && includeWestBevel && "nw",
-                    includeSouthBevel && includeEastBevel && "se",
-                    includeSouthBevel && includeWestBevel && "sw",
-                ],
-                fullSizeX: shearFullSizeX,
-                fullSizeY: shearFullSizeY,
-                floorSizeX: shearFloorSizeX,
-                floorSizeY: shearFloorSizeY,
-                topSizeX: shearTopSizeX,
-                topSizeY: shearTopSizeY,
-           })),
+            translate(
+                [0, 0, ((shearHeight || z) - z) / 2],
+                shearedCube({
+                    x: compartmentX,
+                    y: compartmentY,
+                    z: shearHeight || z,
+                    r: bevel,
+                    include: [
+                        includeFloorBevel && includeNorthBevel && "bn",
+                        includeFloorBevel && includeSouthBevel && "bs",
+                        includeFloorBevel && includeEastBevel && "be",
+                        includeFloorBevel && includeWestBevel && "bw",
+                        includeNorthBevel && includeEastBevel && "ne",
+                        includeNorthBevel && includeWestBevel && "nw",
+                        includeSouthBevel && includeEastBevel && "se",
+                        includeSouthBevel && includeWestBevel && "sw",
+                    ],
+                    fullSizeX: shearFullSizeX,
+                    fullSizeY: shearFullSizeY,
+                    floorSizeX: shearFloorSizeX,
+                    floorSizeY: shearFloorSizeY,
+                    topSizeX: shearTopSizeX,
+                    topSizeY: shearTopSizeY,
+                })
+            ),
     });
 };
 
@@ -262,4 +274,73 @@ const generateCompartmentHatch = ({
     });
 };
 
-module.exports = { rotateDeg, generateShearedCompartmentCutouts, generateBeveledCompartmentCutouts, generateCompartmentHatch, squareHatch, hexHatch };
+const generateCompartmentHexHatch = ({
+    x,
+    y,
+    z,
+    wallStrength,
+    compartments,
+    yRelatives,
+    bevel,
+    hexDiameter,
+    strength,
+    negative = false,
+}) => {
+    return generateCompartments({
+        x,
+        y,
+        z,
+        wallStrength,
+        compartments,
+        yRelatives,
+        fun: ({ compartmentX, compartmentY }) => {
+            const base = beveledCube({
+                x: compartmentX,
+                y: compartmentY,
+                z,
+                r: bevel,
+                exclude: ["t", "b"],
+            });
+            const hatch = hexHatch({
+                x: compartmentX,
+                y: compartmentY,
+                z,
+                hexDiameter,
+                strength,
+            });
+            if (negative) {
+                return subtract(base, subtract(base, hatch));
+            } else {
+                return subtract(base, hatch);
+            }
+        },
+    });
+};
+
+const fingerCutout = (width, length) => {
+    const diameter = width / 2;
+    return union(
+        translate([0, 0, diameter / 4], cuboid({ size: [length, diameter, diameter / 2] })),
+        rotateDeg(
+            [0, 90, 0],
+            cylinder({
+                radius: diameter / 2,
+                height: length,
+            })
+        ),
+        rotateDeg([-90, 90, 90], translate([-diameter / 4, diameter * 0.75, 0], bevel(length, diameter / 2))),
+        rotateDeg([90, 90, 90], translate([-diameter / 4, diameter * 0.75, 0], bevel(length, diameter / 2)))
+    );
+};
+
+module.exports = {
+    rotateDeg,
+    generateShearedCompartmentCutouts,
+    generateBeveledCompartmentCutouts,
+    generateCompartmentHatch,
+    generateCompartmentHexHatch,
+    generateCompartments,
+    squareHatch,
+    hexHatch,
+    fingerCutout,
+};

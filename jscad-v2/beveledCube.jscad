@@ -80,4 +80,4 @@ const rotateDeg = ([x, y, z], ...rest) => {
 };
 
 
-module.exports = { main, getParameterDefinitions, bevel, rotateDeg };
+module.exports = { main, getParameterDefinitions, beveledCube, bevel, rotateDeg };

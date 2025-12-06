@@ -1,7 +1,7 @@
 const jscad = require("@jscad/modeling");
 
 const beveledCube = require("./beveledCube.jscad").main;
-const {generateShearedCompartmentCutouts} = require("./utils.jscad");
+const { generateShearedCompartmentCutouts } = require("./utils.jscad");
 
 const { cylinder } = jscad.primitives;
 const { translate } = jscad.transforms;
@@ -13,7 +13,6 @@ const getParameterDefinitions = () => {
         { name: "y", type: "float", initial: 60, caption: "Y" },
         { name: "z", type: "float", initial: 15, caption: "Z" },
         { name: "wallStrength", type: "float", initial: 1.2, caption: "Wall size" },
-        { name: "innerWallStrength", type: "float", initial: 1.2, caption: "Inner wall size" },
         { name: "floorStrength", type: "float", initial: 1.2, caption: "Floor strength" },
         { name: "innerBevel", type: "float", initial: 5, caption: "Inner Bevel" },
         { name: "outerBevel", type: "float", initial: 0, caption: "Outer Bevel" },
@@ -46,6 +45,11 @@ const getParameterDefinitions = () => {
         { name: "magnetWallStrength", type: "float", initial: 0.8, caption: "Magnet height" },
         { name: "includeTopMagnets", type: "checkbox", checked: true, caption: "Include top magnets" },
         { name: "includeFloorMagnets", type: "checkbox", checked: false, caption: "Include floor magnets" },
+
+        //hinge settings
+        { name: "hingeGroup", type: "group", initial: "closed", caption: "Hinge settings" },
+        { name: "hingeDiameter", type: "float", initial: 4, caption: "Hinge diameter" },
+        { name: "hingeWallStrength", type: "float", initial: 4, caption: "Hinge wall strength" },
     ];
 };
 
@@ -55,12 +59,11 @@ const main = (params) => {
 
 module.exports = { main, getParameterDefinitions };
 
-const basicBitBox = ({
+const hingedLidBox = ({
     x = 90,
     y = 60,
     z = 30,
     wallStrength = 1.2,
-    innerWallStrength,
     wallStrengthX,
     wallStrengthY,
     floorStrength = 1.2,
@@ -95,7 +98,7 @@ const basicBitBox = ({
         typeof yRelativesJson === "string" && yRelativesJson !== "" ? JSON.parse(yRelativesJson) : yRelativesJson;
 
     if (!includeMagnets) includeMagnets = [];
-    
+
     const outerBox = beveledCube({ x, y, z, r: outerBevel, exclude: ["t"], getBevels: true });
 
     const cutouts = translate(
@@ -104,9 +107,9 @@ const basicBitBox = ({
             x: x - 2 * (wallStrengthX || wallStrength),
             y: y - 2 * (wallStrengthY || wallStrength),
             z: z - floorStrength,
-            wallStrength: innerWallStrength || wallStrength,
-            wallStrengthX: wallStrengthX || innerWallStrength || wallStrength,
-            wallStrengthY: wallStrengthY || innerWallStrength || wallStrength,
+            wallStrength,
+            wallStrengthX: wallStrengthX || wallStrength,
+            wallStrengthY: wallStrengthY || wallStrength,
             compartments,
             yRelatives,
             bevel: innerBevel,
@@ -131,10 +134,10 @@ const basicBitBox = ({
     const magnetColumns = [];
 
     if (includeTopMagnets) {
-        includeMagnets.push("TNE", "TNW", "TSE", "TSW")
+        includeMagnets.push("TNE", "TNW", "TSE", "TSW");
     }
     if (includeFloorMagnets) {
-        includeMagnets.push("FNE", "FNW", "FSE", "FSW")
+        includeMagnets.push("FNE", "FNW", "FSE", "FSW");
     }
 
     if (magnetDiameter && magnetHeight && includeMagnets.length > 0) {
@@ -142,14 +145,22 @@ const basicBitBox = ({
         const offset = (magnetDiameter + magnetWallStrength * 2) / 2;
         const zOffset = z / 2 - magnetHeight / 2 - magnetInset;
 
-        if (includeMagnets.includes("TNE")) magnetCutouts.push(translate([x / 2 - offset, y / 2 - offset, zOffset], magnetCutout));
-        if (includeMagnets.includes("TSE")) magnetCutouts.push(translate([-x / 2 + offset, y / 2 - offset, zOffset], magnetCutout));
-        if (includeMagnets.includes("TNW")) magnetCutouts.push(translate([x / 2 - offset, -y / 2 + offset, zOffset], magnetCutout));
-        if (includeMagnets.includes("TSW")) magnetCutouts.push(translate([-x / 2 + offset, -y / 2 + offset, zOffset], magnetCutout));
-        if (includeMagnets.includes("FNE")) magnetCutouts.push(translate([x / 2 - offset, y / 2 - offset, -zOffset], magnetCutout));
-        if (includeMagnets.includes("FSE")) magnetCutouts.push(translate([-x / 2 + offset, y / 2 - offset, -zOffset], magnetCutout));
-        if (includeMagnets.includes("FNW")) magnetCutouts.push(translate([x / 2 - offset, -y / 2 + offset, -zOffset], magnetCutout));
-        if (includeMagnets.includes("FSW")) magnetCutouts.push(translate([-x / 2 + offset, -y / 2 + offset, -zOffset], magnetCutout));
+        if (includeMagnets.includes("TNE"))
+            magnetCutouts.push(translate([x / 2 - offset, y / 2 - offset, zOffset], magnetCutout));
+        if (includeMagnets.includes("TSE"))
+            magnetCutouts.push(translate([-x / 2 + offset, y / 2 - offset, zOffset], magnetCutout));
+        if (includeMagnets.includes("TNW"))
+            magnetCutouts.push(translate([x / 2 - offset, -y / 2 + offset, zOffset], magnetCutout));
+        if (includeMagnets.includes("TSW"))
+            magnetCutouts.push(translate([-x / 2 + offset, -y / 2 + offset, zOffset], magnetCutout));
+        if (includeMagnets.includes("FNE"))
+            magnetCutouts.push(translate([x / 2 - offset, y / 2 - offset, -zOffset], magnetCutout));
+        if (includeMagnets.includes("FSE"))
+            magnetCutouts.push(translate([-x / 2 + offset, y / 2 - offset, -zOffset], magnetCutout));
+        if (includeMagnets.includes("FNW"))
+            magnetCutouts.push(translate([x / 2 - offset, -y / 2 + offset, -zOffset], magnetCutout));
+        if (includeMagnets.includes("FSW"))
+            magnetCutouts.push(translate([-x / 2 + offset, -y / 2 + offset, -zOffset], magnetCutout));
 
         const columnSize = magnetDiameter + magnetWallStrength * 2;
 
@@ -162,10 +173,14 @@ const basicBitBox = ({
                 include,
             });
 
-        if (includeMagnets.includes("TNE") || includeMagnets.includes("FNE")) magnetColumns.push(translate([x / 2 - offset, y / 2 - offset, 0], magnetColumn("nw")));
-        if (includeMagnets.includes("TSE") || includeMagnets.includes("FSE")) magnetColumns.push(translate([-x / 2 + offset, y / 2 - offset, 0], magnetColumn("sw")));
-        if (includeMagnets.includes("TNW") || includeMagnets.includes("FNW")) magnetColumns.push(translate([x / 2 - offset, -y / 2 + offset, 0], magnetColumn("ne")));
-        if (includeMagnets.includes("TSW") || includeMagnets.includes("FSW")) magnetColumns.push(translate([-x / 2 + offset, -y / 2 + offset, 0], magnetColumn("se")));
+        if (includeMagnets.includes("TNE") || includeMagnets.includes("FNE"))
+            magnetColumns.push(translate([x / 2 - offset, y / 2 - offset, 0], magnetColumn("nw")));
+        if (includeMagnets.includes("TSE") || includeMagnets.includes("FSE"))
+            magnetColumns.push(translate([-x / 2 + offset, y / 2 - offset, 0], magnetColumn("sw")));
+        if (includeMagnets.includes("TNW") || includeMagnets.includes("FNW"))
+            magnetColumns.push(translate([x / 2 - offset, -y / 2 + offset, 0], magnetColumn("ne")));
+        if (includeMagnets.includes("TSW") || includeMagnets.includes("FSW"))
+            magnetColumns.push(translate([-x / 2 + offset, -y / 2 + offset, 0], magnetColumn("se")));
     }
 
     return subtract(union(holder, magnetColumns), ...magnetCutouts, outerBox.bevels);
