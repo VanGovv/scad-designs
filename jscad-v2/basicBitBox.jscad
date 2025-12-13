@@ -1,7 +1,7 @@
 const jscad = require("@jscad/modeling");
 
 const beveledCube = require("./beveledCube.jscad").main;
-const {generateShearedCompartmentCutouts} = require("./utils.jscad");
+const {generateShearedCompartmentCutouts, generateCompartmentHexHatch} = require("./utils.jscad");
 
 const { cylinder } = jscad.primitives;
 const { translate } = jscad.transforms;
@@ -52,8 +52,6 @@ const getParameterDefinitions = () => {
 const main = (params) => {
     return basicBitBox(params);
 };
-
-module.exports = { main, getParameterDefinitions };
 
 const basicBitBox = ({
     x = 90,
@@ -170,3 +168,56 @@ const basicBitBox = ({
 
     return subtract(union(holder, magnetColumns), ...magnetCutouts, outerBox.bevels);
 };
+
+const boxAndCover = (holderName, config) => {
+    const {
+        x,
+        y,
+        z,
+        wallStrength,
+        innerBevel,
+        outerBevel,
+        compartments,
+        yRelatives,
+        coverHeight = 10,
+        coverStrength = 1.2,
+        coverClearance = .1,
+        coverHexDiameter = 6,
+        coverHexDistance = 1.2,
+        coverTopBevel = .4
+    } = config;
+    return {
+        [holderName]: basicBitBox({
+            ...config,
+            x: x - 2 * wallStrength - coverClearance,
+            y: y - 2 * wallStrength - coverClearance,
+            z: z - coverStrength,
+        }),
+        [holderName + "Cover"]: subtract(
+            basicBitBox({
+                x,
+                y,
+                z: coverHeight,
+                wallStrength: wallStrength,
+                floorStrength: coverStrength,
+                innerBevel: outerBevel,
+                outerBevel: [outerBevel + wallStrength, coverTopBevel],
+                includeFloorBevel: false,
+            }),
+            generateCompartmentHexHatch({
+                x: x - 4 * wallStrength - coverClearance,
+                y: y - 4 * wallStrength - coverClearance,
+                z: coverHeight,
+                yRelatives,
+                compartments,
+                wallStrength,
+                bevel: innerBevel,
+                hexDiameter: coverHexDiameter,
+                strength: coverHexDistance,
+                negative: true,
+            })
+        ),
+    };
+};
+
+module.exports = { main, getParameterDefinitions, basicBitBox, boxAndCover };

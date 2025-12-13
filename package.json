@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "@jscad/modeling": "^2.12.6"
+    "@jscad/modeling": "^2.12.6",
+    "jscad-now": "../jscad-now"
+  },
+  "scripts": {
+    "jscad-now": "jscad-now"
   }
 }

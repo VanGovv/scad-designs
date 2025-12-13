@@ -2,7 +2,7 @@ const jscad = require("@jscad/modeling");
 const { union } = require("@jscad/modeling/src/operations/booleans");
 const bevel = require("./beveledCube.jscad").bevel;
 const { main: hatch } = require("./hatch.jscad");
-const rotateDeg = require("./beveledCube.jscad").rotateDeg;
+const { generateCompartments, rotateDeg } = require("./utils.jscad");
 
 const { cuboid, cylinder } = jscad.primitives;
 const { translate } = jscad.transforms;
@@ -32,8 +32,6 @@ const main = (params) => {
     return basicCardHolder(params);
 };
 
-module.exports = { main, getParameterDefinitions };
-
 const basicCardHolder = (config) => {
     const {
         cardHeight,
@@ -51,6 +49,7 @@ const basicCardHolder = (config) => {
         hatch_cutoffPercent,
         hatch_maxIterations,
     } = config;
+    
     const boxX = cardHeight + cardClearance + wallStrength * 2;
     const boxY = holderDepth + cardClearance + wallStrength * 2;
     const outerBox = cuboid({
@@ -107,3 +106,15 @@ const basicCardHolder = (config) => {
 
     return subtract(outerBox, cutouts);
 };
+
+const basicCardHolderWithCompartments = (config) => {
+    return union(...generateCompartments({
+        ...config,
+        x: config.holderDepth - 2 * config.wallStrength,
+        y: config.cardHeight * config.compartments.length + config.wallStrength * (config.compartments.length - 1),
+        z: config.cardWidth,
+        fun: ({ compartmentX, compartmentY }) => rotateDeg([0,0,90], basicCardHolder({...config, holderDepth: compartmentX, cardHeight: compartmentY }))
+    }))
+}
+
+module.exports = { main, getParameterDefinitions, basicCardHolder, basicCardHolderWithCompartments };

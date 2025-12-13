@@ -2,7 +2,7 @@ const jscad = require("@jscad/modeling");
 
 const { degToRad } = jscad.utils;
 const { translate, rotate, mirrorX } = jscad.transforms;
-const { union, subtract, intersect } = jscad.booleans;
+const { union, subtract } = jscad.booleans;
 const { cuboid, cylinder } = jscad.primitives;
 const { main: beveledCube, bevel } = require("./beveledCube.jscad");
 const { main: shearedCube } = require("./shearedCube.jscad");
@@ -133,6 +133,7 @@ const generateCompartments = ({
         }
         translateY += compartmentY / 2;
     }
+    console.log(cutouts)
     return cutouts;
 };
 
@@ -286,6 +287,15 @@ const generateCompartmentHexHatch = ({
     strength,
     negative = false,
 }) => {
+    console.log(x,
+    y,
+    z,
+    wallStrength,
+    compartments,
+    yRelatives,
+    bevel,
+    hexDiameter,
+    strength,)
     return generateCompartments({
         x,
         y,
