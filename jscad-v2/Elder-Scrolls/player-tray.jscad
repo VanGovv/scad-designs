@@ -8,7 +8,7 @@ const { subtract, union } = jscad.booleans;
 
 const main = () => {
     const x = 250,
-        y = 210,
+        y = 212,
         z = 3.5,
         radius = 15,
         floorStrength = 1.2,
